@@ -3,7 +3,7 @@ import axios from 'axios';
 // In dev, Vite proxies /auth/* to the backend (see vite.config.ts).
 // In production, VITE_API_URL must point directly at the backend origin.
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/',
+  baseURL: 'http://backend-production-f5bd.up.railway.app',
   withCredentials: true, // needed for the refreshToken cookie
 });
 
