@@ -1,22 +1,20 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Resend uses a plain HTTPS API instead of SMTP, so it isn't affected by
+// hosts (like Railway) that block or throttle outbound SMTP ports.
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-function send(email: string, subject: string, html: string) {
-  return transporter.sendMail({
-    from: `Chat App <${process.env.SMTP_FROM}>`,
+async function send(email: string, subject: string, html: string) {
+  const { error } = await resend.emails.send({
+    from: `Chat App <${process.env.EMAIL_FROM}>`,
     to: email,
     subject,
     html,
   });
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
+  }
 }
 
 function sendActivationLink(email: string, activationToken: string) {
