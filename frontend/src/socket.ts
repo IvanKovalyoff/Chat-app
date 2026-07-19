@@ -5,7 +5,7 @@ import { useAuthStore } from './store/authStore.ts';
 // uses WebSockets which Vite's proxy doesn't forward
 export const socket = io(
   import.meta.env.VITE_API_URL ||
-    'http://backend-production-f5bd.up.railway.app',
+    'https://backend-production-f5bd.up.railway.app',
   {
     autoConnect: false, // we connect manually after login
     auth: cb => {

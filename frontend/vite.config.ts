@@ -7,10 +7,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': {
-        target: 'http://backend-production-f5bd.up.railway.app',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/users': 'http://backend-production-f5bd.up.railway.app',
+      '/users': 'http://localhost:3001',
     },
   },
 });
