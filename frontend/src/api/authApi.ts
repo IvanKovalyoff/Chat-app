@@ -12,9 +12,26 @@ export type AuthResponse = {
   accessToken: string;
 };
 
+export type RegisterResponse = {
+  user: { id: string; email: string; username: string };
+  // Present only when the activation email could not be delivered (e.g. no
+  // verified sending domain configured yet) — lets the UI offer an
+  // instant-activate fallback instead of leaving the user stuck.
+  activationLink?: string;
+};
+
 export const authApi = {
   register: (email: string, username: string, password: string) =>
-    api.post('/auth/register', { email, username, password }),
+    api.post<RegisterResponse>('/auth/register', {
+      email,
+      username,
+      password,
+    }),
+
+  activate: (email: string, token: string) =>
+    api.get<AuthResponse>(
+      `/auth/activation/${encodeURIComponent(email)}/${encodeURIComponent(token)}`,
+    ),
 
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),

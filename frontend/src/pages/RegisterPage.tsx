@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [activationLink, setActivationLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,7 +25,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await authApi.register(email, username, password);
+      const { data } = await authApi.register(email, username, password);
+      setActivationLink(data.activationLink ?? null);
       setSuccess(true);
     } catch (err: unknown) {
       const data = (
@@ -57,6 +59,26 @@ export default function RegisterPage() {
             <span className="text-white">{email}</span>. Click it to activate
             your account.
           </p>
+
+          {activationLink && (
+            <div className="mt-6 p-4 bg-amber-950/40 border border-amber-800/60 rounded-lg text-left">
+              <p className="text-amber-400 text-xs font-semibold mb-1">
+                Demo mode
+              </p>
+              <p className="text-gray-400 text-xs mb-3">
+                This portfolio demo doesn&apos;t have a verified email-sending
+                domain yet, so the activation email likely won&apos;t arrive.
+                Click below to activate instantly instead:
+              </p>
+              <a
+                href={activationLink}
+                className="inline-block w-full text-center py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition text-sm"
+              >
+                Activate my account →
+              </a>
+            </div>
+          )}
+
           <Link
             to="/login"
             className="inline-block mt-6 text-indigo-400 hover:underline text-sm"

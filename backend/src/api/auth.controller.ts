@@ -74,21 +74,27 @@ const register: RequestHandler = async (req, res, next: NextFunction) => {
       activationToken,
     );
 
+    // Only surfaced to the client when delivery fails (e.g. this demo's
+    // Resend sender isn't on a verified domain, so it can't email arbitrary
+    // recipients) — lets the frontend offer an instant-activate fallback
+    // instead of leaving the user stuck waiting on an email that won't come.
+    let activationLink: string | undefined;
+
     try {
       await mailer.sendActivationLink(email, activationToken);
     } catch (mailErr) {
       console.error('Failed to send activation email:', mailErr);
-      const link = `${process.env.CLIENT_URL}/activation/${email}/${activationToken}`;
+      activationLink = `${process.env.CLIENT_URL}/activation/${email}/${activationToken}`;
       console.log(
         '\n--- ACTIVATION LINK (email failed, use this to activate) ---',
       );
-      console.log(link);
+      console.log(activationLink);
       console.log(
         '------------------------------------------------------------\n',
       );
     }
 
-    res.json({ user: userService.normalize(user) });
+    res.json({ user: userService.normalize(user), activationLink });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { authApi } from '../api/authApi.ts';
 import { useAuthStore } from '../store/authStore.ts';
 import { socket } from '../socket.ts';
 
@@ -13,9 +13,8 @@ export default function ActivationPage() {
   useEffect(() => {
     async function activate() {
       try {
-        const { data } = await axios.get(`/auth/activation/${email}/${token}`, {
-          withCredentials: true,
-        });
+        if (!email || !token) throw new Error('Missing activation params');
+        const { data } = await authApi.activate(email, token);
         setAuth(data.user, data.accessToken);
         socket.connect();
         navigate('/');
