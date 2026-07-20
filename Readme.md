@@ -10,7 +10,7 @@
 
 A full-stack real-time chat application with JWT + Google OAuth authentication, persistent message history, and live typing indicators — built end-to-end (schema, API, WebSocket layer, UI) as a portfolio project.
 
-> 🔗 **Live demo:** _add your Netlify/Railway URLs here once deployed_
+> 🔗 **Live demo:** https://chat-for-everyone-app.netlify.app
 
 ## Tech Stack
 
@@ -19,7 +19,7 @@ A full-stack real-time chat application with JWT + Google OAuth authentication, 
 - Express + Socket.IO
 - Prisma ORM + PostgreSQL
 - JWT authentication (access token + refresh token via httpOnly cookie)
-- Nodemailer (email activation via Ethereal)
+- Resend (email activation, sent via HTTP API rather than SMTP)
 
 **Frontend**
 - React 19 + TypeScript
@@ -79,10 +79,10 @@ Open `backend/.env` and fill in:
 | `JWT_ACCESS_SECRET` | Secret for signing access tokens |
 | `JWT_REFRESH_SECRET` | Secret for signing refresh tokens |
 | `CLIENT_URL` | Frontend origin (`http://localhost:5173`) |
-| `SMTP_USER` | Ethereal email username |
-| `SMTP_PASS` | Ethereal email password |
+| `RESEND_API_KEY` | API key from your [Resend](https://resend.com) account |
+| `EMAIL_FROM` | Sender address for activation emails |
 
-> To get free SMTP test credentials, create an account at [ethereal.email](https://ethereal.email).
+> Create a free account at [resend.com](https://resend.com) to get an API key. Without a verified domain, use the sandbox sender `onboarding@resend.dev` — it only delivers to the email address you signed up to Resend with, which is fine for local development. To send activation emails to real users, verify a domain you own in the Resend dashboard and point `EMAIL_FROM` at an address on it (e.g. `no-reply@yourdomain.com`).
 
 ### 4. Start the database
 
@@ -128,9 +128,7 @@ chat-app/
 └── frontend/
     └── src/
         ├── api/                # Axios auth calls
-        ├── components/
-        │   ├── auth/
-        │   └── chat/           # Sidebar, ChatWindow, MessageList, etc.
+        ├── components/         # Sidebar, ChatWindow, MessageList, etc.
         ├── pages/              # LoginPage, RegisterPage, ChatPage, etc.
         ├── store/              # Zustand stores (auth + chat)
         └── socket.ts           # Socket.IO client singleton
@@ -167,8 +165,9 @@ This is a pnpm workspace monorepo — deploy the backend and frontend as two sep
 - Start command: `pnpm --filter backend run migrate:deploy && pnpm --filter backend run start`
   - `prisma generate` runs automatically via `postinstall`
 - Provision a managed PostgreSQL instance and set `DATABASE_URL` to its connection string
-- Environment variables (see `backend/.env.example`): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `SERVER_URL` (this backend's public URL), `CLIENT_URL` (the deployed frontend's public URL), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+- Environment variables (see `backend/.env.example`): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `SERVER_URL` (this backend's public URL), `CLIENT_URL` (the deployed frontend's public URL), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`
   - Generate **fresh** `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` values for production — don't reuse local dev secrets
+  - Email is sent via Resend's HTTP API rather than SMTP, since many hosts (Railway included) block or throttle outbound SMTP ports
 - In Google Cloud Console, add `${SERVER_URL}/auth/google/callback` as an authorized redirect URI
 - `GET /health` is available for the platform's health check
 
