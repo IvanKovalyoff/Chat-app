@@ -154,31 +154,35 @@ From `backend/`:
 | `pnpm generate` | Regenerate Prisma client |
 | `pnpm build` | Compile TypeScript |
 
-## Deployment (Netlify + Railway)
+## Deployment (Netlify + Coolify)
 
-This is a pnpm workspace monorepo — deploy the backend and frontend as two separate services from the same repo. `railway.json` and `netlify.toml` at the repo root already encode the build/start config below, so both platforms pick it up automatically once connected to the GitHub repo.
+Live: frontend at [chat.ivkoff.dev](https://chat.ivkoff.dev), API at `https://api-chat.ivkoff.dev`.
 
-### Backend (Railway)
+This is a pnpm workspace monorepo — the frontend and backend are deployed separately from the same repo. `netlify.toml` at the repo root encodes the frontend build config.
 
-- Root directory: repo root (pnpm workspaces need the root `pnpm-lock.yaml`)
-- Build command: `pnpm install --frozen-lockfile && pnpm --filter backend run build`
+### Backend (Coolify on a self-hosted VPS)
+
+- Source: GitHub App, branch `main` — every push redeploys automatically
+- Build pack: Nixpacks, base directory: repo root (pnpm workspaces need the root `pnpm-lock.yaml`)
+- Install command: `pnpm install --frozen-lockfile`
+- Build command: `pnpm --filter backend run build`
 - Start command: `pnpm --filter backend run migrate:deploy && pnpm --filter backend run start`
   - `prisma generate` runs automatically via `postinstall`
-- Provision a managed PostgreSQL instance and set `DATABASE_URL` to its connection string
-- Environment variables (see `backend/.env.example`): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `SERVER_URL` (this backend's public URL), `CLIENT_URL` (the deployed frontend's public URL), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`
+- Exposed port: `3001`; health check: `GET /health`
+- Watch paths (so frontend-only changes don't rebuild the API): `backend/**`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Database: PostgreSQL 16 managed by Coolify on the same server (private network only), with daily backups to Cloudflare R2
+- Environment variables (see `backend/.env.example`): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `PORT`, `SERVER_URL` (this backend's public URL), `CLIENT_URL` (the deployed frontend's public URL), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, plus `NIXPACKS_NODE_VERSION=22` (build-time only)
   - Generate **fresh** `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` values for production — don't reuse local dev secrets
-  - Email is sent via Resend's HTTP API rather than SMTP, since many hosts (Railway included) block or throttle outbound SMTP ports
-- In Google Cloud Console, add `${SERVER_URL}/auth/google/callback` as an authorized redirect URI
-- `GET /health` is available for the platform's health check
+  - Email is sent via Resend's HTTP API rather than SMTP, since many hosts block or throttle outbound SMTP ports
+- In Google Cloud Console, add `${SERVER_URL}/auth/google/callback` as an authorized redirect URI and `${CLIENT_URL}` as an authorized JavaScript origin
 
 ### Frontend (Netlify)
 
-- Root directory: `frontend`
-- Build command: `pnpm install --frozen-lockfile && pnpm --filter frontend run build`
-- Output directory: `dist`
-- Environment variable: `VITE_API_URL` — the backend's public URL (see `frontend/.env.example`)
+- Build command: `pnpm --filter frontend run build`
+- Publish directory: `frontend/dist`
+- Environment variable: `VITE_API_URL` — the backend's public URL (see `frontend/.env.example`); it is baked in at build time, so redeploy after changing it
 
-Because the frontend and backend sit on different origins, the refresh-token cookie is set with `SameSite=None; Secure`, which requires HTTPS on both ends — the platforms above provide this by default.
+Frontend and backend live on subdomains of the same site (`ivkoff.dev`), so the refresh-token cookie is first-party for the browser. It is still set with `SameSite=None; Secure`, which requires HTTPS on both ends.
 
 ## Author
 
